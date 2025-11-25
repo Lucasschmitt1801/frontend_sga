@@ -3,55 +3,60 @@ import axios from 'axios'
 import './App.css'
 
 function App() {
+  // Estados da aplicação
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
-  const [token, setToken] = useState('')
+  const [token, setToken] = useState(localStorage.getItem('sga_token') || '')
   const [abastecimentos, setAbastecimentos] = useState([])
   const [filtroStatus, setFiltroStatus] = useState('TODOS')
   const [erro, setErro] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // Tenta pegar da variável de ambiente (Vite), se não tiver, usa a string direta
+  // CONFIGURAÇÃO DA URL DA API
+  // Tenta obter a variável de ambiente da Vercel (VITE_API_URL).
+  // Se não existir, usa o link direto do Render como recurso.
   const API_URL = import.meta.env.VITE_API_URL || 'https://sga-api-ovqp.onrender.com';
 
-  // Carregar token do localStorage ao iniciar (evita erro de hidratação/renderização)
-  useEffect(() => {
-    const savedToken = localStorage.getItem('sga_token');
-    if (savedToken) {
-      setToken(savedToken);
-    }
-  }, []);
-
-  // --- LÓGICA DE DADOS ---
+  // --- LÓGICA DE DADOS (KPIs) ---
 
   const totalPendentes = abastecimentos.filter(a => a.status === 'PENDENTE_VALIDACAO').length
   const totalAprovados = abastecimentos.filter(a => a.status === 'APROVADO').length
   const totalReprovados = abastecimentos.filter(a => a.status === 'REPROVADO').length
+  
+  // Calcula o total gasto (excluindo os reprovados)
   const totalGasto = abastecimentos
     .filter(a => a.status !== 'REPROVADO')
     .reduce((acc, curr) => acc + curr.valor_total, 0)
 
+  // Filtra a tabela com base na seleção do utilizador
   const dadosFiltrados = abastecimentos.filter(item => {
     if (filtroStatus === 'TODOS') return true;
     return item.status === filtroStatus;
   })
 
+  // --- FUNÇÕES DE AÇÃO ---
+
   const fazerLogin = async (e) => {
     e.preventDefault()
     setErro('')
     setLoading(true)
+    
+    // O FastAPI espera dados em formato de formulário
     const formData = new URLSearchParams()
     formData.append('username', email) 
     formData.append('password', senha)
 
     try {
+      // URL CORRIGIDA: Usa a variável API_URL limpa
       const res = await axios.post(`${API_URL}/auth/login`, formData)
       const t = res.data.access_token
+      
+      // Salva o token para manter a sessão
       setToken(t)
       localStorage.setItem('sga_token', t)
     } catch (error) {
-      console.error(error);
-      setErro("Login falhou! Verifique email/senha.")
+      console.error("Erro no login:", error);
+      setErro("Login falhou! Verifique o email e a palavra-passe.")
     } finally {
       setLoading(false)
     }
@@ -65,38 +70,42 @@ function App() {
 
   const carregarDados = () => {
     if (!token) return;
+    
+    // Busca os dados ao backend
     axios.get(`${API_URL}/abastecimentos/`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then(res => setAbastecimentos(res.data))
     .catch(err => {
+      // Se o token expirou (401), faz logout automático
       if(err.response?.status === 401) logout();
     })
   }
 
   const aprovar = async (id) => {
-    if (!confirm("Confirma a aprovação?")) return;
+    if (!confirm("Confirma a aprovação deste abastecimento?")) return;
     try {
       await axios.patch(`${API_URL}/abastecimentos/${id}/revisar`, 
         { status: "APROVADO" }, { headers: { Authorization: `Bearer ${token}` } }
       );
       alert("Abastecimento Aprovado! ✅");
-      carregarDados(); 
-    } catch (error) { alert("Erro ao processar."); }
+      carregarDados(); // Atualiza a tabela
+    } catch (error) { alert("Erro ao processar a aprovação."); }
   }
 
   const reprovar = async (id) => {
-    const motivo = prompt("Motivo da reprovação:");
+    const motivo = prompt("Qual o motivo da reprovação?");
     if (!motivo) return; 
     try {
       await axios.patch(`${API_URL}/abastecimentos/${id}/revisar`, 
         { status: "REPROVADO", justificativa: motivo }, { headers: { Authorization: `Bearer ${token}` } }
       );
       alert("Abastecimento Reprovado! ❌");
-      carregarDados();
-    } catch (error) { alert("Erro ao processar."); }
+      carregarDados(); // Atualiza a tabela
+    } catch (error) { alert("Erro ao processar a reprovação."); }
   }
 
+  // Carrega os dados assim que o utilizador faz login
   useEffect(() => {
     if (token) carregarDados();
   }, [token])
@@ -110,13 +119,13 @@ function App() {
           <p style={{textAlign:'center', color:'#666', marginBottom:'30px'}}>Acesso Administrativo</p>
           
           <form onSubmit={fazerLogin}>
-            <input className="login-input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" type="email" required />
-            <input className="login-input" value={senha} onChange={(e) => setSenha(e.target.value)} placeholder="Senha" type="password" required />
+            <input className="login-input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email (admin@sga.com)" type="email" required />
+            <input className="login-input" value={senha} onChange={(e) => setSenha(e.target.value)} placeholder="Palavra-passe" type="password" required />
             
             {erro && <div style={{color:'red', textAlign:'center', marginBottom:'15px', fontSize:'14px'}}>{erro}</div>}
             
             <button type="submit" className="btn-login" disabled={loading}>
-              {loading ? 'Entrando...' : 'ENTRAR'}
+              {loading ? 'A Entrar...' : 'ENTRAR'}
             </button>
           </form>
         </div>
@@ -124,9 +133,10 @@ function App() {
     )
   }
 
-  // --- PAINEL DASHBOARD ---
+  // --- PAINEL DASHBOARD (PRINCIPAL) ---
   return (
     <div className="app-container">
+      {/* Cabeçalho */}
       <header className="header">
         <h1>⛽ SGA Dashboard</h1>
         <div style={{display:'flex', alignItems:'center', gap:'15px'}}>
@@ -135,6 +145,7 @@ function App() {
         </div>
       </header>
 
+      {/* Cartões de Estatísticas (KPIs) */}
       <div className="kpi-grid">
         <div className="kpi-card" style={{borderBottomColor: '#ffc107'}}>
           <h3>Pendentes</h3>
@@ -154,6 +165,7 @@ function App() {
         </div>
       </div>
 
+      {/* Área da Tabela */}
       <div className="table-container">
         <div className="toolbar">
           <h2 style={{margin:0, fontSize:'18px'}}>Últimos Abastecimentos</h2>
@@ -170,7 +182,7 @@ function App() {
         </div>
 
         {dadosFiltrados.length === 0 ? (
-          <p style={{textAlign:'center', padding:'20px', color:'#999'}}>Nenhum registro encontrado.</p>
+          <p style={{textAlign:'center', padding:'20px', color:'#999'}}>Nenhum registo encontrado.</p>
         ) : (
           <table>
             <thead>
@@ -202,6 +214,8 @@ function App() {
                   </td>
                   <td style={{textAlign:'center'}}>
                     <div style={{display:'flex', flexDirection:'column', gap:'5px', alignItems:'center'}}>
+                      
+                      {/* Botões de Fotos */}
                       <div style={{marginBottom:'5px'}}>
                         {item.fotos.length === 0 ? <span style={{fontSize:'11px', color:'#ccc'}}>S/ Fotos</span> : 
                           item.fotos.map(f => (
@@ -211,6 +225,8 @@ function App() {
                           ))
                         }
                       </div>
+
+                      {/* Botões de Aprovação (Só aparecem se estiver pendente) */}
                       {item.status === 'PENDENTE_VALIDACAO' && (
                         <div>
                           <button onClick={() => aprovar(item.id)} className="btn btn-approve">✓</button>
