@@ -3,7 +3,7 @@ import axios from 'axios'
 import './App.css'
 
 function App() {
-  // Estados
+  // Estados da aplicação
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [token, setToken] = useState(localStorage.getItem('sga_token') || '')
@@ -12,14 +12,15 @@ function App() {
   const [erro, setErro] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // URL da API
+  // CONFIGURAÇÃO DA URL DA API
   const API_URL = import.meta.env.VITE_API_URL || 'https://sga-api-ovqp.onrender.com';
 
-  // --- LÓGICA DE DADOS ---
+  // --- LÓGICA DE DADOS (KPIs) ---
 
   const totalPendentes = abastecimentos.filter(a => a.status === 'PENDENTE_VALIDACAO').length
   const totalAprovados = abastecimentos.filter(a => a.status === 'APROVADO').length
   const totalReprovados = abastecimentos.filter(a => a.status === 'REPROVADO').length
+  
   const totalGasto = abastecimentos
     .filter(a => a.status !== 'REPROVADO')
     .reduce((acc, curr) => acc + curr.valor_total, 0)
@@ -29,10 +30,13 @@ function App() {
     return item.status === filtroStatus;
   })
 
+  // --- FUNÇÕES DE AÇÃO ---
+
   const fazerLogin = async (e) => {
     e.preventDefault()
     setErro('')
     setLoading(true)
+    
     const formData = new URLSearchParams()
     formData.append('username', email) 
     formData.append('password', senha)
@@ -43,8 +47,7 @@ function App() {
       setToken(t)
       localStorage.setItem('sga_token', t)
     } catch (error) {
-      console.error(error);
-      setErro("Login falhou! Verifique email/senha.")
+      setErro("Login falhou! Verifique o email e a palavra-passe.")
     } finally {
       setLoading(false)
     }
@@ -73,6 +76,7 @@ function App() {
       await axios.patch(`${API_URL}/abastecimentos/${id}/revisar`, 
         { status: "APROVADO" }, { headers: { Authorization: `Bearer ${token}` } }
       );
+      alert("Abastecimento Aprovado! ✅");
       carregarDados(); 
     } catch (error) { alert("Erro ao processar."); }
   }
@@ -84,7 +88,8 @@ function App() {
       await axios.patch(`${API_URL}/abastecimentos/${id}/revisar`, 
         { status: "REPROVADO", justificativa: motivo }, { headers: { Authorization: `Bearer ${token}` } }
       );
-      carregarDados();
+      alert("Abastecimento Reprovado! ❌");
+      carregarDados(); 
     } catch (error) { alert("Erro ao processar."); }
   }
 
@@ -100,9 +105,9 @@ function App() {
           <p style={{textAlign:'center', color:'#666', marginBottom:'30px'}}>Acesso Administrativo</p>
           <form onSubmit={fazerLogin}>
             <input className="login-input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" type="email" required />
-            <input className="login-input" value={senha} onChange={(e) => setSenha(e.target.value)} placeholder="Senha" type="password" required />
+            <input className="login-input" value={senha} onChange={(e) => setSenha(e.target.value)} placeholder="Palavra-passe" type="password" required />
             {erro && <div style={{color:'red', textAlign:'center', marginBottom:'15px', fontSize:'14px'}}>{erro}</div>}
-            <button type="submit" className="btn-login" disabled={loading}>{loading ? 'Entrando...' : 'ENTRAR'}</button>
+            <button type="submit" className="btn-login" disabled={loading}>{loading ? 'A Entrar...' : 'ENTRAR'}</button>
           </form>
         </div>
       </div>
@@ -146,8 +151,9 @@ function App() {
                 <th>ID</th>
                 <th>Veículo</th>
                 <th>Valor</th>
+                <th>KM Atual</th> {/* NOVA COLUNA */}
                 <th>Posto</th>
-                <th>Localização</th> {/* NOVA COLUNA */}
+                <th>Localização</th>
                 <th>Status</th>
                 <th style={{textAlign:'center'}}>Ações</th>
               </tr>
@@ -158,29 +164,27 @@ function App() {
                   <td>#{item.id}</td>
                   <td>Carro {item.id_veiculo}</td>
                   <td style={{fontWeight:'bold'}}>R$ {item.valor_total}</td>
+                  
+                  {/* COLUNA KM */}
+                  <td>{item.quilometragem ? `${item.quilometragem} km` : '-'}</td>
+
                   <td>{item.nome_posto}</td>
                   
-                  {/* --- COLUNA DO MAPA --- */}
                   <td>
                     {item.gps_lat && item.gps_long ? (
-                      <a 
-                        href={`https://www.google.com/maps/search/?api=1&query=${item.gps_lat},${item.gps_long}`} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        style={{color: '#0056b3', textDecoration: 'none', fontSize: '13px', display:'flex', alignItems:'center', gap:'5px'}}
-                      >
-                        📍 Ver Mapa
-                      </a>
-                    ) : (
-                      <span style={{color:'#ccc', fontSize:'12px'}}>Sem GPS</span>
-                    )}
+                      <a href={`https://www.google.com/maps/search/?api=1&query=${item.gps_lat},${item.gps_long}`} target="_blank" rel="noopener noreferrer" style={{color: '#0056b3', textDecoration: 'none', fontSize: '13px', display:'flex', alignItems:'center', gap:'5px'}}>📍 Ver Mapa</a>
+                    ) : <span style={{color:'#ccc', fontSize:'12px'}}>Sem GPS</span>}
                   </td>
 
                   <td>
                     <span className={`badge badge-${item.status === 'PENDENTE_VALIDACAO' ? 'pendente' : item.status.toLowerCase()}`}>
                       {item.status === 'PENDENTE_VALIDACAO' ? 'PENDENTE' : item.status}
                     </span>
-                    {item.justificativa_revisao && <div style={{fontSize:'10px', color:'#dc3545', marginTop:'5px'}}>{item.justificativa_revisao}</div>}
+                    {item.justificativa_revisao && (
+                      <div style={{fontSize:'10px', color: item.justificativa_revisao.includes('OK') ? 'green' : '#dc3545', marginTop:'5px', fontWeight:'bold'}}>
+                        {item.justificativa_revisao}
+                      </div>
+                    )}
                   </td>
                   <td style={{textAlign:'center'}}>
                     <div style={{display:'flex', flexDirection:'column', gap:'5px', alignItems:'center'}}>
