@@ -1,3 +1,4 @@
+// src/pages/Usuarios.jsx
 import React, { useState } from 'react';
 import { UserPlus, RefreshCw, CheckCircle } from 'lucide-react';
 import axios from 'axios';
@@ -16,7 +17,6 @@ export default function Usuarios() {
 
   const gerarCredenciais = () => {
     if (!nome) return alert("Preencha o nome do colaborador.");
-    
     const nomes = nome.toLowerCase().trim().split(' ');
     const primeiro = nomes[0];
     const ultimo = nomes.length > 1 ? nomes[nomes.length - 1] : '';
@@ -31,21 +31,15 @@ export default function Usuarios() {
   const salvarUsuario = async () => {
     if (!emailGerado) return;
     setLoading(true);
-
     try {
         await axios.post(`${API_URL}/usuarios/`, 
             { nome, email: emailGerado, senha: senhaGerada, perfil }, 
             { headers: { Authorization: `Bearer ${token}` } }
         );
-        
-        alert(`Sucesso! Usuário criado.\n\nLogin: ${emailGerado}\nSenha: ${senhaGerada}`);
-        
-        setNome('');
-        setEmailGerado('');
-        setSenhaGerada('');
-    } catch (error) {
-        console.error(error);
-        alert("Erro ao criar usuário. O email pode já existir ou você não tem permissão de Admin.");
+        alert(`Usuário criado!\nLogin: ${emailGerado}\nSenha: ${senhaGerada}`);
+        setNome(''); setEmailGerado(''); setSenhaGerada('');
+    } catch {
+        alert("Erro ao criar usuário. Verifique se você é ADMIN.");
     } finally {
         setLoading(false);
     }
@@ -54,69 +48,37 @@ export default function Usuarios() {
   return (
     <div>
       <div className="page-header">
-        <div>
-            <h1 className="page-title">Colaboradores</h1>
-            <p className="page-subtitle">Cadastre motoristas para acesso ao App Mobile.</p>
-        </div>
+        <h1 className="page-title">Colaboradores</h1>
       </div>
 
       <div className="grid-dashboard">
-        
-        {/* Card Esquerdo: Formulário */}
         <div className="card">
-            <h3 style={{ marginBottom: '20px' }}>1. Dados do Funcionário</h3>
-            
-            <div className="form-group">
-                <label className="form-label">Nome Completo</label>
-                <input className="form-control" value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: Carlos Silva" />
-            </div>
-
-            <div className="form-group">
-                <label className="form-label">Empresa / Filial</label>
-                <input className="form-control" value={empresa} onChange={e => setEmpresa(e.target.value)} />
-            </div>
-
-            <div className="form-group">
-                <label className="form-label">Nível de Acesso</label>
-                <select className="form-control" value={perfil} onChange={e => setPerfil(e.target.value)}>
-                    <option value="EXECUTOR">Motorista (Acesso App Mobile)</option>
-                    <option value="ADMIN">Administrador (Acesso Painel Web)</option>
-                </select>
-            </div>
-
+            <h3 style={{ marginBottom: '20px' }}>1. Novo Cadastro</h3>
+            <input className="form-control" value={nome} onChange={e => setNome(e.target.value)} placeholder="Nome Completo" />
+            <input className="form-control" value={empresa} onChange={e => setEmpresa(e.target.value)} placeholder="Empresa" />
+            <select className="form-control" value={perfil} onChange={e => setPerfil(e.target.value)}>
+                <option value="EXECUTOR">Motorista (App)</option>
+                <option value="ADMIN">Administrador (Web)</option>
+            </select>
             <button onClick={gerarCredenciais} className="btn btn-primary" style={{width: '100%', justifyContent: 'center'}}>
-                <RefreshCw size={18} /> Gerar Login Automático
+                <RefreshCw size={18} /> Gerar Acesso
             </button>
         </div>
 
-        {/* Card Direito: Resultado */}
-        <div className="card" style={{ background: '#f8f9fa', border: '2px dashed #dee2e6' }}>
-            <h3 style={{ marginBottom: '20px', color: '#666' }}>2. Credenciais Geradas</h3>
-            
+        <div className="card" style={{ background: '#f8f9fa', border: '2px dashed #ddd', textAlign:'center' }}>
+            <h3 style={{ marginBottom: '20px', color: '#666' }}>2. Credenciais</h3>
             {emailGerado ? (
                 <div>
-                    <div style={{ marginBottom: '15px' }}>
-                        <span style={{ fontSize: '12px', textTransform: 'uppercase', color: '#999' }}>Login (Email)</span>
-                        <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#0056b3' }}>{emailGerado}</div>
-                    </div>
-
-                    <div style={{ marginBottom: '20px' }}>
-                        <span style={{ fontSize: '12px', textTransform: 'uppercase', color: '#999' }}>Senha Inicial</span>
-                        <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#28a745' }}>{senhaGerada}</div>
-                    </div>
-
+                    <p style={{fontSize:'12px', textTransform:'uppercase', color:'#999'}}>Login</p>
+                    <h3 style={{color:'#0056b3', margin:'0 0 15px 0'}}>{emailGerado}</h3>
+                    <p style={{fontSize:'12px', textTransform:'uppercase', color:'#999'}}>Senha</p>
+                    <h3 style={{color:'#28a745', margin:'0 0 20px 0'}}>{senhaGerada}</h3>
                     <button onClick={salvarUsuario} disabled={loading} className="btn btn-success" style={{width: '100%', justifyContent: 'center'}}>
-                        <CheckCircle size={18} /> {loading ? 'Salvando...' : 'CONFIRMAR CADASTRO'}
+                        <CheckCircle size={18} /> {loading ? 'Salvando...' : 'Confirmar'}
                     </button>
                 </div>
-            ) : (
-                <div style={{ textAlign: 'center', padding: '40px 0', color: '#aaa' }}>
-                    <UserPlus size={40} />
-                    <p>Preencha os dados ao lado e clique em "Gerar".</p>
-                </div>
-            )}
+            ) : <p style={{color:'#aaa', marginTop:'30px'}}>Preencha os dados para gerar.</p>}
         </div>
-
       </div>
     </div>
   );
