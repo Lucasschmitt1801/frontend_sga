@@ -1,10 +1,10 @@
-// src/App.jsx
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Usuarios from './pages/Usuarios';
+import Setores from './pages/Setores'; 
 import Abastecimentos from './pages/Abastecimentos';
 import './App.css';
 
@@ -26,9 +26,12 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
+        
         <Route path="/" element={<RotaPrivada><Dashboard /></RotaPrivada>} />
         <Route path="/usuarios" element={<RotaPrivada><Usuarios /></RotaPrivada>} />
+        <Route path="/setores" element={<RotaPrivada><Setores /></RotaPrivada>} />
         <Route path="/abastecimentos" element={<RotaPrivada><Abastecimentos /></RotaPrivada>} />
+        
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>
