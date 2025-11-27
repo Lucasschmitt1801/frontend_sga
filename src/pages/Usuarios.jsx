@@ -4,140 +4,119 @@ import axios from 'axios';
 
 export default function Usuarios() {
   const [nome, setNome] = useState('');
-  const [empresa, setEmpresa] = useState('Carburgo');
+  const [empresa, setEmpresa] = useState('SGA');
   const [perfil, setPerfil] = useState('EXECUTOR');
   
-  // Dados Gerados
   const [emailGerado, setEmailGerado] = useState('');
   const [senhaGerada, setSenhaGerada] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  // Função Mágica: Gera credenciais
+  const API_URL = import.meta.env.VITE_API_URL || 'https://sga-api-ovqp.onrender.com';
+  const token = localStorage.getItem('sga_token');
+
   const gerarCredenciais = () => {
-    if (!nome) return alert("Digite o nome do colaborador primeiro.");
-
-    // Lógica: nome.sobrenome@empresa.com.br
-    const nomes = nome.toLowerCase().trim().split(' ');
-    const primeiroNome = nomes[0];
-    const ultimoNome = nomes.length > 1 ? nomes[nomes.length - 1] : '';
+    if (!nome) return alert("Preencha o nome do colaborador.");
     
-    const emailFinal = `${primeiroNome}.${ultimoNome}@${empresa.toLowerCase()}.com.br`.replace('..', '.');
-    const senhaFinal = `${primeiroNome.charAt(0).toUpperCase() + primeiroNome.slice(1)}@2025`; // Ex: Pedro@2025
+    const nomes = nome.toLowerCase().trim().split(' ');
+    const primeiro = nomes[0];
+    const ultimo = nomes.length > 1 ? nomes[nomes.length - 1] : '';
+    
+    const emailFinal = `${primeiro}.${ultimo}@${empresa.toLowerCase().replace(/\s/g, '')}.com`.replace('..', '.');
+    const senhaFinal = `${primeiro.charAt(0).toUpperCase() + primeiro.slice(1)}@2025`;
 
     setEmailGerado(emailFinal);
     setSenhaGerada(senhaFinal);
   };
 
   const salvarUsuario = async () => {
+    if (!emailGerado) return;
+    setLoading(true);
+
     try {
-        // Exemplo de chamada API
-        /* await axios.post('URL_API/usuarios', { 
-            nome, email: emailGerado, senha: senhaGerada, perfil 
-        }); */
-        alert(`Usuário ${nome} criado com sucesso!`);
+        await axios.post(`${API_URL}/usuarios/`, 
+            { nome, email: emailGerado, senha: senhaGerada, perfil }, 
+            { headers: { Authorization: `Bearer ${token}` } }
+        );
+        
+        alert(`Sucesso! Usuário criado.\n\nLogin: ${emailGerado}\nSenha: ${senhaGerada}`);
+        
+        setNome('');
+        setEmailGerado('');
+        setSenhaGerada('');
     } catch (error) {
-        alert("Erro ao criar usuário.");
+        console.error(error);
+        alert("Erro ao criar usuário. O email pode já existir ou você não tem permissão de Admin.");
+    } finally {
+        setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">Gestão de Usuários</h2>
+    <div>
+      <div className="page-header">
+        <div>
+            <h1 className="page-title">Colaboradores</h1>
+            <p className="page-subtitle">Cadastre motoristas para acesso ao App Mobile.</p>
+        </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-        <div className="bg-blue-600 p-4">
-          <h3 className="text-white font-semibold flex items-center gap-2">
-            <UserPlus size={20}/> Novo Colaborador
-          </h3>
+      <div className="grid-dashboard">
+        
+        {/* Card Esquerdo: Formulário */}
+        <div className="card">
+            <h3 style={{ marginBottom: '20px' }}>1. Dados do Funcionário</h3>
+            
+            <div className="form-group">
+                <label className="form-label">Nome Completo</label>
+                <input className="form-control" value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: Carlos Silva" />
+            </div>
+
+            <div className="form-group">
+                <label className="form-label">Empresa / Filial</label>
+                <input className="form-control" value={empresa} onChange={e => setEmpresa(e.target.value)} />
+            </div>
+
+            <div className="form-group">
+                <label className="form-label">Nível de Acesso</label>
+                <select className="form-control" value={perfil} onChange={e => setPerfil(e.target.value)}>
+                    <option value="EXECUTOR">Motorista (Acesso App Mobile)</option>
+                    <option value="ADMIN">Administrador (Acesso Painel Web)</option>
+                </select>
+            </div>
+
+            <button onClick={gerarCredenciais} className="btn btn-primary" style={{width: '100%', justifyContent: 'center'}}>
+                <RefreshCw size={18} /> Gerar Login Automático
+            </button>
         </div>
 
-        <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-          
-          {/* LADO ESQUERDO: DADOS PESSOAIS */}
-          <div className="space-y-4">
-            <h4 className="text-sm uppercase tracking-wide text-gray-500 font-bold mb-2">Dados Pessoais</h4>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Nome Completo</label>
-              <input 
-                type="text" 
-                className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" 
-                placeholder="Ex: Pedro Almeida"
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Empresa / Filial</label>
-              <input 
-                type="text" 
-                className="mt-1 block w-full p-2 border border-gray-300 rounded-md" 
-                value={empresa}
-                onChange={(e) => setEmpresa(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Nível de Acesso</label>
-              <select 
-                className="mt-1 block w-full p-2 border border-gray-300 rounded-md bg-white"
-                value={perfil}
-                onChange={(e) => setPerfil(e.target.value)}
-              >
-                <option value="EXECUTOR">Colaborador (App Mobile)</option>
-                <option value="ADMIN">Administrador (Painel Web)</option>
-              </select>
-            </div>
-
-            <button 
-                onClick={gerarCredenciais}
-                className="mt-4 w-full flex items-center justify-center gap-2 bg-gray-800 text-white py-2 rounded hover:bg-gray-700 transition"
-            >
-                <RefreshCw size={16} /> Gerar Login Automático
-            </button>
-          </div>
-
-          {/* LADO DIREITO: CREDENCIAIS GERADAS */}
-          <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 flex flex-col justify-center">
-            <h4 className="text-sm uppercase tracking-wide text-gray-500 font-bold mb-4 text-center">Credenciais de Acesso</h4>
+        {/* Card Direito: Resultado */}
+        <div className="card" style={{ background: '#f8f9fa', border: '2px dashed #dee2e6' }}>
+            <h3 style={{ marginBottom: '20px', color: '#666' }}>2. Credenciais Geradas</h3>
             
             {emailGerado ? (
-                <div className="space-y-4">
-                    <div>
-                        <span className="text-xs text-gray-500">Login (Email)</span>
-                        <div className="font-mono text-lg font-bold text-blue-700 break-all">{emailGerado}</div>
+                <div>
+                    <div style={{ marginBottom: '15px' }}>
+                        <span style={{ fontSize: '12px', textTransform: 'uppercase', color: '#999' }}>Login (Email)</span>
+                        <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#0056b3' }}>{emailGerado}</div>
                     </div>
-                    <div>
-                        <span className="text-xs text-gray-500">Senha Inicial</span>
-                        <div className="font-mono text-lg font-bold text-green-600">{senhaGerada}</div>
+
+                    <div style={{ marginBottom: '20px' }}>
+                        <span style={{ fontSize: '12px', textTransform: 'uppercase', color: '#999' }}>Senha Inicial</span>
+                        <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#28a745' }}>{senhaGerada}</div>
                     </div>
-                    <div className="bg-yellow-50 border border-yellow-200 p-2 text-xs text-yellow-800 rounded mt-2">
-                        ⚠️ Informe esta senha ao colaborador. Ele poderá alterá-la depois.
-                    </div>
+
+                    <button onClick={salvarUsuario} disabled={loading} className="btn btn-success" style={{width: '100%', justifyContent: 'center'}}>
+                        <CheckCircle size={18} /> {loading ? 'Salvando...' : 'CONFIRMAR CADASTRO'}
+                    </button>
                 </div>
             ) : (
-                <div className="text-center text-gray-400 py-10">
-                    Preencha os dados ao lado e clique em "Gerar" para criar o login.
+                <div style={{ textAlign: 'center', padding: '40px 0', color: '#aaa' }}>
+                    <UserPlus size={40} />
+                    <p>Preencha os dados ao lado e clique em "Gerar".</p>
                 </div>
             )}
-          </div>
-
         </div>
 
-        {/* RODAPÉ DO CARD */}
-        <div className="p-4 bg-gray-50 border-t flex justify-end">
-            <button 
-                onClick={salvarUsuario}
-                disabled={!emailGerado}
-                className={`flex items-center gap-2 px-6 py-2 rounded-md text-white font-bold shadow-md transition ${
-                    emailGerado ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-300 cursor-not-allowed'
-                }`}
-            >
-                <CheckCircle size={20} /> Criar Usuário
-            </button>
-        </div>
       </div>
     </div>
   );
