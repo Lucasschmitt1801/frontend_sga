@@ -31,14 +31,14 @@ export default function Veiculos() {
     if (!placa || !modelo) return alert("Preencha placa e modelo.");
     setLoading(true);
     
-    // Tratamento de dados para evitar erros de banco
+    // Envia NULL se o campo estiver vazio para não dar erro de duplicidade no banco
     const payload = { 
         placa: placa.toUpperCase().trim(), 
         modelo: modelo.trim(), 
         fabricante: fabricante ? fabricante.trim() : null, 
         ano_fabricacao: ano ? parseInt(ano) : null, 
         cor: cor ? cor.trim() : null, 
-        chassi: chassi ? chassi.trim() : null, // Envia NULL se estiver vazio
+        chassi: chassi ? chassi.trim() : null, 
         status 
     };
 
@@ -54,8 +54,8 @@ export default function Veiculos() {
         carregarVeiculos();
     } catch (error) {
         console.error(error);
-        // Mostra a mensagem real do erro vinda do servidor
-        const msg = error.response?.data?.detail || "Erro ao salvar. Verifique a placa ou chassi.";
+        // Exibe a mensagem exata que o Backend mandou
+        const msg = error.response?.data?.detail || "Erro ao salvar. Verifique os dados.";
         alert(`Erro: ${msg}`);
     } finally {
         setLoading(false);
