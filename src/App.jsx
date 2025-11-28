@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Usuarios from './pages/Usuarios';
 import Setores from './pages/Setores'; 
+import Veiculos from './pages/Veiculos'; // Importar aqui
 import Abastecimentos from './pages/Abastecimentos';
 import './App.css';
 
@@ -29,6 +30,7 @@ function App() {
         
         <Route path="/" element={<RotaPrivada><Dashboard /></RotaPrivada>} />
         <Route path="/usuarios" element={<RotaPrivada><Usuarios /></RotaPrivada>} />
+        <Route path="/veiculos" element={<RotaPrivada><Veiculos /></RotaPrivada>} /> {/* Rota Nova */}
         <Route path="/setores" element={<RotaPrivada><Setores /></RotaPrivada>} />
         <Route path="/abastecimentos" element={<RotaPrivada><Abastecimentos /></RotaPrivada>} />
         
