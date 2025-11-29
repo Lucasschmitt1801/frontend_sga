@@ -119,7 +119,7 @@ export default function Dashboard() {
         </div>
 
         <div className="card">
-            <h3 style={{marginBottom:'20px'}}>Gasto por Setor (Colaborador)</h3>
+            <h3 style={{marginBottom:'20px'}}>Gasto por Setor</h3>
             <div style={{ height: '300px' }}>
                 {dadosSetor.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
