@@ -15,35 +15,46 @@ export default function Usuarios() {
   const [emailGerado, setEmailGerado] = useState('');
   const [senhaGerada, setSenhaGerada] = useState('');
   
-  // Lista da Tabela
+  // Listas da Tabela e Selects
   const [listaUsuarios, setListaUsuarios] = useState([]);
+  const [listaSetores, setListaSetores] = useState([]); // Agora é dinâmico
   const [loading, setLoading] = useState(false);
 
   const API_URL = import.meta.env.VITE_API_URL || 'https://sga-api-ovqp.onrender.com';
   const token = localStorage.getItem('sga_token');
 
-  const listaSetores = ['Logística', 'Vendas', 'Operacional', 'TI', 'Diretoria'];
+  // --- 1. CARREGAR DADOS INICIAIS (USUÁRIOS E SETORES) ---
+  useEffect(() => {
+    carregarUsuarios();
+    carregarSetores();
+  }, []);
 
-  // --- 1. CARREGAR LISTA ---
   const carregarUsuarios = () => {
     axios.get(`${API_URL}/usuarios/`, { headers: { Authorization: `Bearer ${token}` } })
       .then(res => {
-          // O backend retorna uma lista, vamos garantir que seja array
           if(Array.isArray(res.data)) setListaUsuarios(res.data);
       })
-      .catch(err => console.error("Erro ao listar:", err));
+      .catch(err => console.error("Erro ao listar usuários:", err));
   };
 
-  useEffect(() => { carregarUsuarios(); }, []);
+  const carregarSetores = () => {
+    axios.get(`${API_URL}/setores/`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(res => {
+          if(Array.isArray(res.data)) setListaSetores(res.data);
+      })
+      .catch(err => console.error("Erro ao listar setores:", err));
+  };
 
-  // --- 2. GERAR LOGIN ---
+  // --- 2. GERAR LOGIN AUTOMÁTICO ---
   const gerarCredenciais = () => {
     if (!nome) return alert("Preencha o nome do colaborador.");
     const nomes = nome.toLowerCase().trim().split(' ');
     const primeiro = nomes[0];
     const ultimo = nomes.length > 1 ? nomes[nomes.length - 1] : '';
     
+    // Email: nome.sobrenome@empresa.com
     const emailFinal = `${primeiro}.${ultimo}@${empresa.toLowerCase().replace(/\s/g, '')}.com`.replace('..', '.');
+    // Senha: Nome@2025
     const senhaFinal = `${primeiro.charAt(0).toUpperCase() + primeiro.slice(1)}@2025`;
 
     setEmailGerado(emailFinal);
@@ -59,7 +70,7 @@ export default function Usuarios() {
         const payload = { 
             nome, 
             email: emailGerado, 
-            senha: senhaGerada || "SenhaMantida123", // Hack se for edição sem mudar senha
+            senha: senhaGerada || "SenhaMantida123", 
             perfil, 
             cargo, 
             setor 
@@ -69,7 +80,7 @@ export default function Usuarios() {
             await axios.put(`${API_URL}/usuarios/${idEditando}`, payload, { 
                 headers: { Authorization: `Bearer ${token}` } 
             });
-            alert("Usuário atualizado!");
+            alert("Colaborador atualizado com sucesso!");
         } else {
             await axios.post(`${API_URL}/usuarios/`, payload, { 
                 headers: { Authorization: `Bearer ${token}` } 
@@ -78,10 +89,10 @@ export default function Usuarios() {
         }
 
         limparFormulario();
-        carregarUsuarios(); // Atualiza a tabela
+        carregarUsuarios(); 
 
     } catch (error) {
-        alert("Erro ao salvar. Verifique permissões ou email duplicado.");
+        alert("Erro ao salvar. Verifique se o email já existe.");
     } finally {
         setLoading(false);
     }
@@ -103,14 +114,16 @@ export default function Usuarios() {
 
   // --- 5. PREPARAR EDIÇÃO ---
   const iniciarEdicao = (usuario) => {
-    setIdEditando(usuario.id); // Guardamos o ID original do banco
-    setNome(usuario.nome || "Nome não informado");
+    setIdEditando(usuario.id);
+    setNome(usuario.nome || "");
     setEmailGerado(usuario.email);
     setPerfil(usuario.perfil);
-    // Campos extras (se o backend retornar no futuro)
     setCargo(usuario.cargo || "");
     setSetor(usuario.setor || "");
     setSenhaGerada(""); 
+    
+    // Rola para o topo para editar
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const limparFormulario = () => {
@@ -144,11 +157,19 @@ export default function Usuarios() {
                     <label>Cargo</label>
                     <input className="form-control" value={cargo} onChange={e => setCargo(e.target.value)} placeholder="Motorista" />
                 </div>
+                
+                {/* SELECT DE SETORES AGORA É DINÂMICO */}
                 <div className="form-group">
                     <label>Setor</label>
                     <select className="form-control" value={setor} onChange={e => setSetor(e.target.value)}>
                         <option value="">Selecione...</option>
-                        {listaSetores.map(s => <option key={s} value={s}>{s}</option>)}
+                        {listaSetores.length > 0 ? (
+                            listaSetores.map(s => (
+                                <option key={s.id} value={s.nome}>{s.nome}</option>
+                            ))
+                        ) : (
+                            <option disabled>Nenhum setor cadastrado</option>
+                        )}
                     </select>
                 </div>
             </div>
@@ -164,7 +185,7 @@ export default function Usuarios() {
 
             {!idEditando && (
                 <button onClick={gerarCredenciais} className="btn btn-primary" style={{width: '100%', marginBottom:'15px'}}>
-                    <RefreshCw size={18} /> Gerar Acesso
+                    <RefreshCw size={18} /> Gerar Acesso Automático
                 </button>
             )}
 
@@ -198,7 +219,7 @@ export default function Usuarios() {
                     <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
                         <tr>
                             <th style={{width:'40%'}}>Nome / Email</th>
-                            <th>Perfil</th>
+                            <th>Perfil / Setor</th>
                             <th style={{textAlign:'center'}}>Ações</th>
                         </tr>
                     </thead>
@@ -217,6 +238,11 @@ export default function Usuarios() {
                                     }}>
                                         {u.perfil}
                                     </span>
+                                    {u.setor && (
+                                        <div style={{fontSize:'11px', color:'#666', marginTop:'4px'}}>
+                                            Setor: {u.setor}
+                                        </div>
+                                    )}
                                 </td>
                                 <td style={{ textAlign: 'center' }}>
                                     <button onClick={() => iniciarEdicao(u)} className="btn" style={{ padding: '6px', color: '#0056b3' }} title="Editar">
