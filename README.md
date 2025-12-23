@@ -1,16 +1,35 @@
-# React + Vite
+### 2. README - Frontend (Web & Mobile PWA)
+Este arquivo destaca a capacidade **PWA (Progressive Web App)** para atender ao seu requisito de funcionamento offline e adaptação para tablets/celulares.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+```markdown
+# SGA - Frontend (Web & Mobile)
 
-Currently, two official plugins are available:
+Interface do usuário para o **Sistema de Gestão de Abastecimento**. Desenvolvido como uma **Progressive Web App (PWA)**, o sistema é totalmente responsivo (mobile-first) e possui capacidades de funcionamento offline para garantir o registro de abastecimentos mesmo em áreas sem cobertura de internet.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 📱 Funcionalidades Principais
 
-## React Compiler
+* **Dashboard Administrativo:** Visualização de gastos e alertas de fraude.
+* **Modo Offline:** Sincronização automática de dados quando a conexão é restabelecida.
+* **Responsividade:** Layout adaptável para Desktops, Tablets e Smartphones.
+* **Captura de Notas:** Integração com câmera do dispositivo para envio de comprovantes.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🚀 Tecnologias Utilizadas
 
-## Expanding the ESLint configuration
+* **React:** Biblioteca principal de UI.
+* **TypeScript:** Para tipagem estática e segurança do código.
+* **Vite:** Build tool e servidor de desenvolvimento.
+* **TanStack Query (React Query):** Gerenciamento de estado assíncrono e cache (essencial para o modo offline).
+* **TailwindCSS:** Estilização utilitária e responsiva.
+* **Axios:** Cliente HTTP.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## ⚙️ Pré-requisitos
+
+* [Node.js](https://nodejs.org/) (Versão 16 ou superior).
+* [NPM](https://www.npmjs.com/) ou Yarn.
+
+## 🔧 Instalação
+
+1. **Clone o repositório:**
+   ```bash
+   git clone [https://github.com/seu-usuario/sga-frontend.git](https://github.com/seu-usuario/sga-frontend.git)
+   cd sga-frontend
